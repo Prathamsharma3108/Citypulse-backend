@@ -38,26 +38,33 @@ const registerUser = async (req, res) => {
 // @desc    Auth user & get token
 // @route   POST /api/users/login
 // @access  Public
+// ... existing registerUser function
+
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // Check for user by email
     const user = await User.findOne({ email });
 
-    // Check if user exists and password matches
     if (user && (await user.matchPassword(password))) {
-      console.log('Login successful for user:', user.name);
-      // For now, we'll just redirect to a dashboard.
-      // Later, you'll implement JWT here.
-      res.redirect('/dashboard');
+      // Create a session for the user
+      req.session.userId = user._id;
+      
+      console.log('Login successful, session created for:', user.name);
+      res.redirect('/dashboard'); // Redirect to the EJS dashboard page
     } else {
-      res.status(401).send('Invalid email or password'); // Or render login page with an error
+      // Re-render login page with an error message
+      res.render('login', { error: 'Invalid email or password' });
     }
   } catch (error) {
     console.error(error);
     res.status(500).send('Server error');
   }
+};
+
+module.exports = {
+  registerUser,
+  loginUser,
 };
 
 module.exports = {

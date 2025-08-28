@@ -3,10 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
+    <title>Your Dashboard</title>
+    <style>
+        body { font-family: sans-serif; }
+        .container { display: flex; flex-wrap: wrap; gap: 20px; }
+        .widget { border: 1px solid #ccc; border-radius: 8px; padding: 16px; width: 300px; }
+        h2 { margin-top: 0; }
+        li { margin-bottom: 8px; }
+    </style>
 </head>
 <body>
-    <h1>Welcome to your Dashboard!</h1>
-    <p>Login was successful. You can now build out the dashboard features here.</p>
+    <h1>Welcome back, <%= user.name %>!</h1>
+    <p>Here's your pulse for <%= weather.name %>.</p>
+
+    <div class="container">
+        <div class="widget">
+            <h2>Current Weather</h2>
+            <% if (weather && !weather.error) { %>
+                <p><strong>Temperature:</strong> <%= weather.main.temp %>°C</p>
+                <p><strong>Feels like:</strong> <%= weather.main.feels_like %>°C</p>
+                <p><strong>Condition:</strong> <%= weather.weather[0].description %></p>
+            <% } else { %>
+                <p>Could not load weather data.</p>
+            <% } %>
+        </div>
+
+        <div class="widget">
+            <h2>Top News Headlines</h2>
+            <% if (news && !news.error && news.length > 0) { %>
+                <ul>
+                    <% news.forEach(article => { %>
+                        <li><a href="<%= article.url %>" target="_blank"><%= article.title %></a></li>
+                    <% }) %>
+                </ul>
+            <% } else { %>
+                <p>Could not load news data.</p>
+            <% } %>
+        </div>
+        
+        <div class="widget">
+            <h2>Videos for <%= weather.name %></h2>
+            <% if (videos && !videos.error && videos.length > 0) { %>
+                <ul>
+                    <% videos.forEach(video => { %>
+                        <li><a href="https://www.youtube.com/watch?v=<%= video.id.videoId %>" target="_blank"><%= video.snippet.title %></a></li>
+                    <% }) %>
+                </ul>
+            <% } else { %>
+                <p>Could not load video data.</p>
+            <% } %>
+        </div>
+    </div>
 </body>
 </html>

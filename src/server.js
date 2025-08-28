@@ -1,5 +1,3 @@
-// server.js
-
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -9,7 +7,16 @@ const userRoutes = require('./routes/userRoutes');
 const cron = require('node-cron');
 const Post = require('./models/Post');
 const path = require('path');
-const bodyParser = require('body-parser'); // Import body-parser
+const bodyParser = require('body-parser');
+const dashboardRoutes = require('./routes/dashboardRoutes'); 
+const postRoutes = require('./routes/postRoutes');
+
+// --- FIX #1: Import Session Packages ---
+const session = require('express-session');
+const MongoStore = require('connect-mongo');
+const { protect } = require('./middleware/authMiddleware');
+const { getWeatherData, getNewsData, getYoutubeVideos } = require('./services/apiService');
+
 
 // Load environment variables
 dotenv.config();
@@ -21,9 +28,19 @@ const PORT = process.env.PORT || 5000;
 // Connect to the database
 connectDB();
 
-// Middleware
+
+// --- FIX #1: Add Session Middleware ---
+// This MUST come before your routes
+app.use(session({
+    secret: process.env.SESSION_SECRET, // Make sure to add SESSION_SECRET to your .env file
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({ mongoUrl: process.env.MONGO_URI })
+}));
+
+
+// Other Middleware
 app.use(express.json());
-// Add body-parser middleware to parse URL-encoded form data
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Configure EJS as the view engine
@@ -33,32 +50,49 @@ app.set('views', path.join(__dirname, 'views'));
 // Serve static files from the 'public' directory
 app.use(express.static('public'));
 
-// API routers
+// --- API Routers ---
 app.use('/api', updatesRouter);
 app.use('/api/users', userRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/posts', postRoutes);
 
 
 // --- Page Serving Routes ---
 
-// Root route to serve the EJS file
 app.get('/', (req, res) => {
-  const pageTitle = 'City Pulse - Your Local Hub';
-  res.render('home', { pageTitle: pageTitle, user: null, posts: [] });
+  res.render('home');
 });
 
-// A route to serve the login page
 app.get('/login', (req, res) => {
   res.render('login');
 });
 
-// A route to serve the registration page
 app.get('/register', (req, res) => {
   res.render('register');
 });
 
-// A placeholder route for the dashboard after login
-app.get('/dashboard', (req, res) => {
-  res.render('dashboard');
+
+// --- FIX #2: Replace the old dashboard route with this new one ---
+app.get('/dashboard', protect, async (req, res) => {
+  try {
+    const user = req.user;
+    const city = user.city || 'Delhi';
+
+    const weather = await getWeatherData(city);
+    const news = await getNewsData('in');
+    const videos = await getYoutubeVideos(city);
+
+    res.render('dashboard', {
+      user: user,
+      weather: weather,
+      news: news,
+      videos: videos
+    });
+
+  } catch (error) {
+    console.error('Error loading dashboard:', error);
+    res.status(500).send('Could not load dashboard.');
+  }
 });
 
 
@@ -70,7 +104,6 @@ cron.schedule('* * * * *', async () => {
       isPublished: false,
       scheduledFor: { $lte: now }
     });
-
     if (scheduledPosts.length > 0) {
       console.log(`Publishing ${scheduledPosts.length} scheduled posts.`);
       for (const post of scheduledPosts) {
