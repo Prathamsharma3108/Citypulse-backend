@@ -4,20 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - City Pulse</title>
-    </head>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
+</head>
 <body>
-    <h1>Login to Your Account</h1>
-    <form action="/api/users/login" method="POST">
-        <div>
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" required>
+    <div class="container">
+        <h1 class="brand-title">City Pulse</h1>
+        <p>Sign in to continue to your dashboard.</p>
+
+        <div class="form-container">
+            <% if (typeof error !== 'undefined') { %>
+                <p style="color: red; text-align: center;"><%= error %></p>
+            <% } %>
+
+            <form action="/api/users/login" method="POST">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" class="button" style="width: 100%; margin-top: 10px;">Sign In</button>
+            </form>
+            <div class="form-links">
+                <a href="/forgot-password">Forgot Password?</a> | <a href="/register">Create an account</a>
+            </div>
         </div>
-        <div>
-            <label for="password">Password:</label>
-            <input type="password" id="password" name="password" required>
-        </div>
-        <button type="submit">Login</button>
-    </form>
-    <p>Don't have an account? <a href="/register">Register here</a></p>
+    </div>
 </body>
 </html>

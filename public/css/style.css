@@ -1,0 +1,258 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    background: linear-gradient(to right, #e0eafc, #cfdef3);
+    background-color: #e0eafc; 
+    color: #333;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+.container {
+    text-align: center;
+    background-color: white;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    font-size: 3rem;
+    color: #1c1e21;
+}
+
+p {
+    font-size: 1.2rem;
+    color: #606770;
+}
+
+.button-group {
+    margin-top: 30px;
+}
+
+.button {
+    text-decoration: none;
+    color: white;
+    background-color: #1877F2; /* Facebook Blue */
+    padding: 15px 30px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 10px;
+    transition: background-color 0.2s;
+}
+
+.button:hover {
+    background-color: #166FE5; /* Darker Blue */
+}
+/* Add this to the bottom of public/css/style.css */
+.brand-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 4rem;
+    font-weight: 700;
+    color: #1c1e21;
+    letter-spacing: -2px; /* Adds a professional touch */
+}
+/* Add this to the bottom of public/css/style.css */
+
+/* Form Styling */
+.form-container {
+    margin-top: 20px;
+    width: 100%;
+    max-width: 400px;
+    text-align: left;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #555;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-sizing: border-box;
+    font-size: 1rem;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #1877F2;
+    box-shadow: 0 0 0 2px #e7f3ff;
+}
+
+.form-links {
+    margin-top: 15px;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.form-links a {
+    color: #1877F2;
+    text-decoration: none;
+}
+
+.form-links a:hover {
+    text-decoration: underline;
+}
+/* =================================
+   DASHBOARD STYLES
+   ================================= */
+.dashboard-container {
+    display: flex;
+    width: 100%;
+    max-width: 1400px; /* Limit max width */
+    height: 95vh;
+    background-color: transparent;
+    padding: 0;
+    box-shadow: none;
+}
+
+.sidebar {
+    width: 280px;
+    background-color: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+}
+
+.sidebar-profile img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 10px;
+}
+
+.sidebar-profile h2 {
+    margin: 10px 0 5px;
+}
+
+.sidebar-profile p {
+    font-size: 0.9rem;
+    color: #606770;
+    margin-bottom: 20px;
+}
+
+.sidebar-nav a {
+    display: block;
+    padding: 12px;
+    margin: 5px 0;
+    text-decoration: none;
+    color: #333;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.sidebar-nav a:hover {
+    background-color: #f0f2f5;
+}
+
+.main-content {
+    flex-grow: 1;
+    padding: 0 20px;
+    overflow-y: auto; /* Make content scrollable */
+}
+
+.card {
+    background-color: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    margin-bottom: 20px;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr; /* 2 parts for feed, 1 part for widgets */
+    gap: 20px;
+}
+
+/* On smaller screens, stack the grid items */
+@media (max-width: 992px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
+/* =================================
+   INSTAGRAM-STYLE POST CARD
+   ================================= */
+.post-card {
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    margin-bottom: 20px;
+    /* We handle padding inside */
+}
+
+.post-header {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    gap: 10px;
+}
+
+.post-header img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.post-header a {
+    font-weight: 600;
+    text-decoration: none;
+    color: inherit;
+}
+
+.post-body {
+    padding: 0 15px 15px;
+}
+
+.post-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 8px 15px;
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+}
+
+.action-btn svg {
+    width: 24px;
+    height: 24px;
+    stroke: #262626;
+    stroke-width: 2;
+    fill: none;
+}
+
+.action-btn.liked svg {
+    fill: #ff3040; /* Red fill when liked */
+    stroke: #ff3040; /* Red outline when liked */
+}
+
+.post-info {
+    padding: 0 15px 15px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}

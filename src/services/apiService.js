@@ -2,6 +2,8 @@ const axios = require('axios');
 
 const getWeatherData = async (city) => {
   try {
+    const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${process.env.WEATHER_API_KEY}&units=metric`;
+    console.log('Requesting Weather URL:', apiUrl);
     const response = await axios.get(
       `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${process.env.WEATHER_API_KEY}&units=metric`
     );

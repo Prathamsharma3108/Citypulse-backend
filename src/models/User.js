@@ -17,6 +17,23 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  city: {
+    type: String,
+    required: true,
+  },
+  bio: {
+    type: String,
+    default: ''
+  },
+  profilePicture: {
+    type: String,
+    default: 'https://i.stack.imgur.com/34AD2.jpg' // A default placeholder image
+ },
+
+
+  resetPasswordToken: String,
+  resetPasswordExpire: Date,
+
 }, {
   timestamps: true, // Automatically adds createdAt and updatedAt fields
 });

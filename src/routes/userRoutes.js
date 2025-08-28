@@ -1,13 +1,25 @@
-// routes/userRoutes.js
-
 const express = require('express');
 const router = express.Router();
-const { registerUser, loginUser } = require('../controllers/userController');
+const { 
+    registerUser, 
+    loginUser, 
+    forgotPassword, 
+    resetPassword, 
+    updateProfile 
+} = require('../controllers/userController');
+const { protect } = require('../middleware/authMiddleware');
+const upload = require('../config/cloudinary');
 
-// Route for registering a new user
+// --- Authentication Routes ---
 router.post('/register', registerUser);
-
-// Route for logging in a user
 router.post('/login', loginUser);
+
+// --- Profile Routes ---
+// The upload.single() middleware handles the file upload before updateProfile is called
+router.post('/profile', protect, upload.single('profilePicture'), updateProfile);
+
+// --- Password Reset Routes ---
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password/:resetToken', resetPassword);
 
 module.exports = router;

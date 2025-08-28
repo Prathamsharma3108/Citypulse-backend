@@ -1,9 +1,19 @@
 const express = require('express');
 const router = express.Router();
-const { createPost, getPosts } = require('../controllers/postController');
+const { 
+    createPost, 
+    getPosts, 
+    likePost, 
+    addComment 
+} = require('../controllers/postController');
 const { protect } = require('../middleware/authMiddleware');
+// 1. Import the upload middleware
+const upload = require('../config/cloudinary');
 
-// Attach the 'protect' middleware to all routes in this file
-router.route('/').post(protect, createPost).get(protect, getPosts);
+// 2. Add the middleware to the post creation route
+router.route('/').post(protect, upload.single('postImage'), createPost).get(protect, getPosts);
+
+router.post('/:id/like', protect, likePost);
+router.post('/:id/comment', protect, addComment);
 
 module.exports = router;

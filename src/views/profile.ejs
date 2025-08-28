@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= user.name %>'s Profile</title>
+    <style>
+        body { font-family: sans-serif; }
+        .profile-container { display: flex; gap: 20px; align-items: flex-start; }
+        .profile-pic { width: 150px; height: 150px; border-radius: 50%; object-fit: cover; }
+        .profile-details { flex-grow: 1; }
+        .edit-form { background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin-top: 20px; }
+        .feed { width: 100%; max-width: 600px; margin-top: 20px; }
+        .post { border: 1px solid #eee; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    </style>
+</head>
+<body>
+    <div class="profile-container">
+        <img src="<%= user.profilePicture %>" alt="Profile Picture" class="profile-pic">
+        <div class="profile-details">
+            <h1><%= user.name %></h1>
+            <p>@<%= user.username %></p>
+            <p><strong>City:</strong> <%= user.city %></p>
+            <p><strong>Bio:</strong> <%= user.bio || 'No bio yet.' %></p>
+            <a href="/dashboard">Back to Dashboard</a>
+        </div>
+    </div>
+
+    <div class="edit-form">
+        <h2>Update Your Profile</h2>
+        <form action="/api/users/profile" method="POST" enctype="multipart/form-data">
+            <div>
+                <label for="bio">Bio:</label><br>
+                <textarea name="bio" id="bio" rows="3" style="width: 100%;"><%= user.bio %></textarea>
+            </div>
+            <div style="margin-top: 10px;">
+                <label for="profilePicture">Update Profile Picture:</label><br>
+                <input type="file" name="profilePicture" id="profilePicture" accept="image/*">
+            </div>
+            <button type="submit" style="margin-top: 10px;">Save Changes</button>
+        </form>
+    </div>
+
+    <div class="feed">
+        <h2>My Posts</h2>
+        <% if (posts && posts.length > 0) { %>
+            <% posts.forEach(post => { %>
+                <div class="post">
+                    <p><%= post.content %></p>
+                    <small>Posted on: <%= new Date(post.createdAt).toLocaleDateString() %></small>
+                </div>
+            <% }) %>
+        <% } else { %>
+            <p>You haven't created any posts yet.</p>
+        <% } %>
+    </div>
+</body>
+</html>
