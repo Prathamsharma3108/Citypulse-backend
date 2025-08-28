@@ -100,15 +100,17 @@ app.get('/dashboard', protect, async (req, res) => {
     const latitude = weather.coord.lat;
     const longitude = weather.coord.lon;
 
-    res.render('dashboard', {
-      user: user,
-      weather: weather,
-      news: news,
-      videos: videos,
-      posts: posts 
-      latitude: latitude,   // <-- Pass latitude to the template
-      longitude: longitude// <-- Pass the posts to the template
-    });
+    // Inside your app.get('/dashboard', ...) route
+
+res.render('dashboard', {
+    user: user,
+    weather: weather,
+    news: news,
+    videos: videos,
+    posts: posts,
+    latitude: latitude,
+    longitude: longitude
+});
 
   } catch (error) {
     console.error('Error loading dashboard:', error);
