@@ -72,21 +72,42 @@ app.get('/register', (req, res) => {
 });
 
 
-// --- FIX #2: Replace the old dashboard route with this new one ---
+// --- FIX #2: Replace the old dashboard route with // server.js
+
+// ... (other require statements)
+const Post = require('./models/Post'); // Make sure Post model is required
+
+// ... (other code)
+
+// --- Update this existing dashboard route ---
 app.get('/dashboard', protect, async (req, res) => {
   try {
     const user = req.user;
-    const city = user.city || 'Delhi';
+    const city = user.city;
 
+    // Fetch API data (as before)
     const weather = await getWeatherData(city);
     const news = await getNewsData('in');
     const videos = await getYoutubeVideos(city);
+    
+
+    // --- ADD THIS ---
+    // Fetch all posts from the database
+    const posts = await Post.find({})
+        .populate('user', 'name username')
+        .sort({ createdAt: -1 });
+
+    const latitude = weather.coord.lat;
+    const longitude = weather.coord.lon;
 
     res.render('dashboard', {
       user: user,
       weather: weather,
       news: news,
-      videos: videos
+      videos: videos,
+      posts: posts 
+      latitude: latitude,   // <-- Pass latitude to the template
+      longitude: longitude// <-- Pass the posts to the template
     });
 
   } catch (error) {
