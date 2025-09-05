@@ -3,56 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= user.name %>'s Profile</title>
+    <title><%= profileUser.name %> (@<%= profileUser.username %>) - City Pulse</title>
+    <link rel="stylesheet" href="/css/style.css">
     <style>
-        body { font-family: sans-serif; }
-        .profile-container { display: flex; gap: 20px; align-items: flex-start; }
-        .profile-pic { width: 150px; height: 150px; border-radius: 50%; object-fit: cover; }
-        .profile-details { flex-grow: 1; }
-        .edit-form { background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin-top: 20px; }
-        .feed { width: 100%; max-width: 600px; margin-top: 20px; }
-        .post { border: 1px solid #eee; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+        /* --- NEW: IMAGE RESIZING FIX --- */
+        .post-image-container img {
+            max-width: 100%; /* Ensures image is never wider than its container */
+            height: auto;      /* Maintains aspect ratio */
+            display: block;    /* Removes extra space below the image */
+            border-radius: 8px; /* Optional: adds rounded corners */
+        }
     </style>
 </head>
-<body>
-    <div class="profile-container">
-        <img src="<%= user.profilePicture %>" alt="Profile Picture" class="profile-pic">
-        <div class="profile-details">
-            <h1><%= user.name %></h1>
-            <p>@<%= user.username %></p>
-            <p><strong>City:</strong> <%= user.city %></p>
-            <p><strong>Bio:</strong> <%= user.bio || 'No bio yet.' %></p>
-            <a href="/dashboard">Back to Dashboard</a>
-        </div>
-    </div>
-
-    <div class="edit-form">
-        <h2>Update Your Profile</h2>
-        <form action="/api/users/profile" method="POST" enctype="multipart/form-data">
-            <div>
-                <label for="bio">Bio:</label><br>
-                <textarea name="bio" id="bio" rows="3" style="width: 100%;"><%= user.bio %></textarea>
+<body style="align-items: flex-start; padding: 2.5vh 20px;">
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-profile">
+                <img src="<%= currentUser.profilePicture %>" alt="Profile Picture">
+                <h2><%= currentUser.name %></h2>
+                <p>@<%= currentUser.username %></p>
             </div>
-            <div style="margin-top: 10px;">
-                <label for="profilePicture">Update Profile Picture:</label><br>
-                <input type="file" name="profilePicture" id="profilePicture" accept="image/*">
-            </div>
-            <button type="submit" style="margin-top: 10px;">Save Changes</button>
-        </form>
-    </div>
+            <nav class="sidebar-nav">
+                <a href="/dashboard">Dashboard</a>
+                <a href="/profile">My Profile</a>
+                <% if (currentUser && currentUser.isAdmin) { %>
+                    <a href="/admin" style="color: #007bff; font-weight: bold;">Admin Panel</a>
+                <% } %>
+                <a href="/logout">Logout</a>
+            </nav>
+        </aside>
 
-    <div class="feed">
-        <h2>My Posts</h2>
-        <% if (posts && posts.length > 0) { %>
-            <% posts.forEach(post => { %>
-                <div class="post">
-                    <p><%= post.content %></p>
-                    <small>Posted on: <%= new Date(post.createdAt).toLocaleDateString() %></small>
+        <main class="main-content" style="display: grid; grid-template-columns: 1fr; gap: 20px;">
+            <div class="card profile-header-card">
+                <div class="profile-header">
+                    <div class="profile-avatar">
+                        <img src="<%= profileUser.profilePicture %>" alt="<%= profileUser.name %>'s profile picture">
+                    </div>
+                    <div class="profile-info">
+                        <h2><%= profileUser.name %></h2>
+                        <p class="username">@<%= profileUser.username %></p>
+                        <p class="bio"><%= profileUser.bio %></p>
+                    </div>
+                    <% if (currentUser._id.equals(profileUser._id)) { %>
+                        <a href="/edit-profile" class="button">Edit Profile</a>
+                    <% } %>
                 </div>
-            <% }) %>
-        <% } else { %>
-            <p>You haven't created any posts yet.</p>
-        <% } %>
+            </div>
+
+            <div class="feed-column">
+                <h2>Posts by @<%= profileUser.username %></h2>
+                <% if (posts.length > 0) { %>
+                    <% posts.forEach(post => { %>
+                        <div class="post-card" data-postid="<%= post._id %>">
+                            <div class="post-header">
+                                <img src="<%= profileUser.profilePicture %>" alt="<%= profileUser.username %>'s profile picture">
+                                <a href="/profile/<%= profileUser.username %>"><%= profileUser.username %></a>
+                            </div>
+                            <% if (post.imageUrl) { %>
+                                <div class="post-image-container">
+                                    <img src="<%= post.imageUrl %>" alt="Post image">
+                                </div>
+                            <% } %>
+                            <div class="post-body">
+                                <p><%= post.content %></p>
+                            </div>
+                            <div class="post-actions">
+                                <button class="like-button <%= post.likes.some(like => like.equals(currentUser._id)) ? 'liked' : '' %>">
+                                    ❤️ <span class="likes-count"><%= post.likes.length %></span>
+                                </button>
+                                <button class="comment-button">💬 <%= post.comments.length %></button>
+                            </div>
+                            <div class="comments-section">
+                                <div class="comments-list" data-postid="<%= post._id %>">
+                                    <% post.comments.forEach(comment => { %>
+                                        <p><a href="/profile/<%= comment.user.username %>" class="comment-username"><%= comment.user.username %></a>: <%= comment.content %></p>
+                                    <% }) %>
+                                </div>
+                                <form class="comment-form" data-postid="<%= post._id %>">
+                                    <input type="text" name="content" placeholder="Add a comment..." required>
+                                    <button type="submit">Post</button>
+                                </form>
+                            </div>
+                        </div>
+                    <% }) %>
+                <% } else { %>
+                    <div class="card">
+                        <p>@<%= profileUser.username %> hasn't posted anything yet.</p>
+                    </div>
+                <% } %>
+            </div>
+        </main>
     </div>
+    <script>
+        document.addEventListener('click', async (event) => {
+            if (event.target.closest('.like-button')) {
+                const button = event.target.closest('.like-button');
+                const postId = button.closest('.post-card').dataset.postid;
+                try {
+                    const response = await fetch(`/api/posts/${postId}/like`, { method: 'POST' });
+                    const data = await response.json();
+                    button.querySelector('.likes-count').textContent = data.likesCount;
+                    button.classList.toggle('liked', data.isLiked);
+                } catch (error) { console.error('Error liking post:', error); }
+            }
+        });
+        document.querySelectorAll('.comment-form').forEach(form => {
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const postId = form.dataset.postid;
+                const input = form.querySelector('input[name="content"]');
+                const content = input.value;
+                if (!content) return;
+                try {
+                    const response = await fetch(`/api/posts/${postId}/comment`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: content }) });
+                    const newComment = await response.json();
+                    const commentList = document.querySelector(`.comments-list[data-postid="${postId}"]`);
+                    const newCommentElement = document.createElement('p');
+                    newCommentElement.innerHTML = `<a href="/profile/${newComment.user.username}" class="comment-username">${newComment.user.username}</a>: ${newComment.content}`;
+                    commentList.appendChild(newCommentElement);
+                    input.value = '';
+                } catch (error) { console.error('Error adding comment:', error); }
+            });
+        });
+    </script>
 </body>
 </html>

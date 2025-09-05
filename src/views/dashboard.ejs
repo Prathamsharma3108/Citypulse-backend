@@ -6,141 +6,182 @@
     <title>Dashboard - City Pulse</title>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <style>
+        body { overflow: hidden; }
+        #map { height: 400px; width: 100%; border-radius: 8px; margin-bottom: 20px; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal-content { background-color: #fefefe; margin: auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 500px; border-radius: 8px; }
+        .close-button { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .dashboard-container { display: flex; height: calc(100vh - 40px); }
+        .main-content { flex-grow: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; overflow: hidden; }
+        .feed-column, .side-column { overflow-y: auto; padding-right: 15px; }
+
+        /* --- NEW: IMAGE RESIZING FIX --- */
+        .post-image-container img {
+            max-width: 100%; /* Ensures image is never wider than its container */
+            height: auto;      /* Maintains aspect ratio */
+            display: block;    /* Removes extra space below the image */
+            border-radius: 8px; /* Optional: adds rounded corners */
+        }
+    </style>
 </head>
-<body style="align-items: flex-start; padding: 2.5vh 20px;">
+<body style="padding: 20px;">
     <div class="dashboard-container">
         
         <aside class="sidebar">
             <div class="sidebar-profile">
-                <img src="<%= user.profilePicture || 'https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg' %>" alt="Profile Picture">
-                <h2><%= user.name %></h2>
-                <p>@<%= user.username %></p>
+                <img src="<%= currentUser.profilePicture %>" alt="Profile Picture">
+                <h2><%= currentUser.name %></h2>
+                <p>@<%= currentUser.username %></p>
             </div>
             <nav class="sidebar-nav">
                 <a href="/dashboard">Dashboard</a>
                 <a href="/profile">My Profile</a>
+                <% if (currentUser && currentUser.isAdmin) { %>
+                    <a href="/admin" style="color: #007bff; font-weight: bold;">Admin Panel</a>
+                <% } %>
                 <a href="/logout">Logout</a>
             </nav>
         </aside>
 
         <main class="main-content">
-            <div class="card post-form-card">
-                <form action="/api/posts" method="POST" enctype="multipart/form-data">
-                    <textarea name="content" placeholder="What's on your mind...?" required style="width: 100%; min-height: 60px; border-radius: 8px; border: 1px solid #ddd; padding: 10px; font-size: 1rem;"></textarea>
-                    <input type="file" name="postImage" accept="image/*" style="margin-top: 10px;">
-                    <button type="submit" class="button" style="margin-top: 10px;">Post</button>
-                </form>
-            </div>
-
-            <div class="dashboard-grid">
-                <div class="grid-item feed-column">
-                    <% posts.forEach(post => { %>
-                        <div class="post-card">
-                            <div class="post-header">
-                                <img src="<%= post.user.profilePicture || 'https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg' %>" alt="<%= post.user.username %>'s profile picture">
-                                <a href="/profile/<%= post.user.username %>"><%= post.user.username %></a>
-                            </div>
-
-                            <% if (post.imageUrl) { %>
-                                <div class="post-image-container" style="width: 100%; max-height: 600px; overflow: hidden; margin-top: 10px;">
-                                    <img src="<%= post.imageUrl %>" alt="Post image" style="width: 100%; height: auto; object-fit: cover;">
-                                </div>
-                            <% } %>
-
-                            <div class="post-body" style="padding-top: 15px;">
-                                <p><strong><a href="/profile/<%= post.user.username %>" style="text-decoration: none; color: inherit;"><%= post.user.username %></a></strong> <%= post.content %></p>
-                            </div>
-
-                            <div class="post-actions">
-                                <form class="like-form" data-postid="<%= post._id %>">
-                                    <button type="submit" class="action-btn <% if (post.likes.some(like => like.equals(user._id))) { %>liked<% } %>">
-                                        <svg aria-label="Like" fill="currentColor" height="24" role="img" viewBox="0 0 48 48" width="24"><path d="M34.6 3.9c-4.2 0-7.9 2.1-10.6 5.6-2.7-3.4-6.4-5.6-10.6-5.6C6 3.9 0 9.9 0 17.2 0 24 5.3 28.7 10.6 33.8c3.7 3.5 9.2 8.6 13.4 12.4 4.2-3.8 9.7-8.9 13.4-12.4C42.7 28.7 48 24 48 17.2c0-7.3-6-13.3-13.4-13.3z"></path></svg>
-                                    </button>
-                                </form>
-                                <button class="action-btn">
-                                    <svg aria-label="Comment" fill="currentColor" height="24" role="img" viewBox="0 0 24 24" width="24"><path d="M20.656 17.008a9.993 9.993 0 1 0-3.59 3.615L22 22Z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="2"></path></svg>
-                                </button>
-                            </div>
-
-                            <div class="post-info">
-                                <span class="like-count" data-postid="<%= post._id %>"><%= post.likes.length %> likes</span>
-                            </div>
-
-                            <div class="comments-section" style="padding: 0 15px 15px; border-top: 1px solid #f0f2f5;">
-                                <div class="comments-list" style="margin-top: 10px;">
-                                    <% post.comments.slice(0, 2).forEach(comment => { %>
-                                        <p><a href="/profile/<%= comment.user.username %>" style="font-weight: bold; text-decoration:none; color: inherit;"><%= comment.user.username %></a>: <%= comment.content %></p>
-                                    <% }) %>
-                                    <% if (post.comments.length > 2) { %>
-                                        <p style="color: #8e8e8e;">View all <%= post.comments.length %> comments</p>
-                                    <% } %>
-                                </div>
-                                <form action="/api/posts/<%= post._id %>/comment" method="POST" style="margin-top: 10px;">
-                                    <input type="text" name="content" placeholder="Add a comment..." required style="width: 100%; border: none; background: transparent; padding: 5px 0;">
-                                </form>
-                            </div>
+            <div class="feed-column">
+                <div class="card post-form-card">
+                    <form action="/api/posts" method="POST" enctype="multipart/form-data">
+                        <textarea name="content" placeholder="What's on your mind, <%= currentUser.name.split(' ')[0] %>?" required></textarea>
+                        <div class="form-actions">
+                            <input type="file" name="postImage" id="postImage" accept="image/*" style="display:none;">
+                            <label for="postImage" class="button-secondary">Add Photo</label>
+                            <button type="submit" class="button">Post</button>
                         </div>
-                    <% }) %>
+                    </form>
                 </div>
-
-                <div class="grid-item widgets-column">
-                    <div class="card">
-                        <h2>Map of <%= weather && !weather.error ? weather.name : user.city %></h2>
-                        <div id="map" style="height: 250px; width: 100%; border-radius: 8px;"></div>
+                
+                <% posts.forEach(post => { %>
+                    <div class="post-card" data-postid="<%= post._id %>">
+                        <div class="post-header">
+                            <img src="<%= post.user.profilePicture %>" alt="<%= post.user.username %>'s profile picture">
+                            <a href="/profile/<%= post.user.username %>"><%= post.user.username %></a>
+                        </div>
+                        <% if (post.imageUrl) { %>
+                            <div class="post-image-container">
+                                <img src="<%= post.imageUrl %>" alt="Post image">
+                            </div>
+                        <% } %>
+                        <div class="post-body">
+                            <p><%= post.content %></p>
+                        </div>
+                        <div class="post-actions">
+                            <button class="like-button <%= post.likes.some(like => like.equals(currentUser._id)) ? 'liked' : '' %>">
+                                ❤️ <span class="likes-count"><%= post.likes.length %></span>
+                            </button>
+                            <button class="comment-button">💬 <%= post.comments.length %></button>
+                        </div>
+                        <div class="comments-section">
+                            <div class="comments-list" data-postid="<%= post._id %>">
+                                <% post.comments.forEach(comment => { %>
+                                    <p><a href="/profile/<%= comment.user.username %>" class="comment-username"><%= comment.user.username %></a>: <%= comment.content %></p>
+                                <% }) %>
+                            </div>
+                            <form class="comment-form" data-postid="<%= post._id %>">
+                                <input type="text" name="content" placeholder="Add a comment..." required>
+                                <button type="submit">Post</button>
+                            </form>
+                        </div>
                     </div>
-                    <div class="card">
-                        <h2>Current Weather</h2>
-                        <% if (weather && !weather.error) { %>
-                            <p><strong>Temperature:</strong> <%= weather.main.temp %>°C</p>
-                            <p><strong>Condition:</strong> <%= weather.weather[0].description %></p>
-                        <% } else { %> <p>Could not load weather data.</p> <% } %>
-                    </div>
-                    <div class="card">
-                        <h2>Top News Headlines</h2>
-                        <% if (news && !news.error && news.length > 0) { %>
-                            <ul style="padding-left: 20px;"><% news.slice(0, 5).forEach(article => { %><li><a href="<%= article.url %>" target="_blank"><%= article.title %></a></li><% }) %></ul>
-                        <% } else { %> <p>Could not load news data.</p> <% } %>
-                    </div>
+                <% }) %>
+            </div>
+            <div class="side-column">
+                <div class="card">
+                    <h3>Events Map</h3>
+                    <div id="map"></div>
+                    <button id="createEventBtn" class="button" style="width: 100%;">Create New Event</button>
                 </div>
+                <div class="card">
+                    <h3>Weather in <%= currentUser.city %></h3>
+                    <% if (weather && !weather.error) { %>
+                        <p><strong><%= weather.main.temp %>°C</strong>, <%= weather.weather[0].description %></p>
+                    <% } else { %> <p>Could not load weather data.</p> <% } %>
+                </div>
+                <div class="card"><h3>Local News</h3><% news.forEach(article => { %><p><a href="<%= article.url %>" target="_blank"><%= article.title %></a></p><% }) %></div>
+                <div class="card"><h3>Explore <%= currentUser.city %></h3><% videos.forEach(video => { %><p><a href="https://www.youtube.com/watch?v=<%= video.id.videoId %>" target="_blank"><%= video.snippet.title %></a></p><% }); %></div>
             </div>
         </main>
     </div>
-
+    <div id="eventModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Create a New Event</h2>
+            <p>The event location will be set to the current center of your map.</p>
+            <form id="eventForm">
+                <div class="form-group"><label for="title">Event Title</label><input type="text" id="title" name="title" required></div>
+                <div class="form-group"><label for="description">Description</label><textarea id="description" name="description" required></textarea></div>
+                <div class="form-group"><label for="date">Date & Time</label><input type="datetime-local" id="date" name="date" required></div>
+                <button type="submit" class="button">Create Event</button>
+            </form>
+        </div>
+    </div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        <% if (latitude && longitude) { %>
-            var map = L.map('map').setView([<%= latitude %>, <%= longitude %>], 13);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
-            L.marker([<%= latitude %>, <%= longitude %>]).addTo(map);
-        <% } else { %>
-            document.getElementById('map').innerHTML = '<p>Map data is currently unavailable.</p>';
-        <% } %>
-    </script>
-
-    <script>
-        const likeForms = document.querySelectorAll('.like-form');
-        likeForms.forEach(form => {
+        const lat = <%= latitude || 29.3909 %>;
+        const lng = <%= longitude || 76.9635 %>;
+        const map = L.map('map').setView([lat, lng], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
+        function addEventMarker(event) { L.marker([event.location.lat, event.location.lng]).addTo(map).bindPopup(`<b>${event.title}</b><br>${event.description}`); }
+        async function loadEvents() {
+            try {
+                const response = await fetch('/api/events');
+                if (!response.ok) throw new Error('Failed to fetch events');
+                const events = await response.json();
+                events.forEach(addEventMarker);
+            } catch (error) { console.error('Error loading events for map:', error); }
+        }
+        loadEvents();
+        const modal = document.getElementById('eventModal'), createEventBtn = document.getElementById('createEventBtn'), closeBtn = document.querySelector('.close-button'), eventForm = document.getElementById('eventForm');
+        createEventBtn.onclick = () => modal.style.display = 'flex';
+        closeBtn.onclick = () => modal.style.display = 'none';
+        window.onclick = (event) => { if (event.target == modal) { modal.style.display = 'none'; } };
+        eventForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(eventForm);
+            const data = Object.fromEntries(formData.entries());
+            const mapCenter = map.getCenter();
+            data.lat = mapCenter.lat; data.lng = mapCenter.lng; data.organizer = "<%= currentUser.name %>";
+            try {
+                const response = await fetch('/api/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+                if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.message || 'Failed to create event'); }
+                const newEvent = await response.json();
+                addEventMarker(newEvent); modal.style.display = 'none'; eventForm.reset();
+            } catch (error) { console.error('Error creating event:', error); alert('Error: ' + error.message); }
+        });
+        document.addEventListener('click', async (event) => {
+            if (event.target.closest('.like-button')) {
+                const button = event.target.closest('.like-button');
+                const postId = button.closest('.post-card').dataset.postid;
+                try {
+                    const response = await fetch(`/api/posts/${postId}/like`, { method: 'POST' });
+                    const data = await response.json();
+                    button.querySelector('.likes-count').textContent = data.likesCount;
+                    button.classList.toggle('liked', data.isLiked);
+                } catch (error) { console.error('Error liking post:', error); }
+            }
+        });
+        document.querySelectorAll('.comment-form').forEach(form => {
             form.addEventListener('submit', async (event) => {
                 event.preventDefault();
                 const postId = form.dataset.postid;
+                const input = form.querySelector('input[name="content"]');
+                const content = input.value;
+                if (!content) return;
                 try {
-                    const response = await fetch(`/api/posts/${postId}/like`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' }
-                    });
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    const data = await response.json();
-                    const likeCountSpan = document.querySelector(`.like-count[data-postid="${postId}"]`);
-                    likeCountSpan.textContent = `${data.likesCount} likes`;
-                    const likeButton = form.querySelector('.action-btn');
-                    if (data.isLiked) {
-                        likeButton.classList.add('liked');
-                    } else {
-                        likeButton.classList.remove('liked');
-                    }
-                } catch (error) {
-                    console.error('Error liking post:', error);
-                }
+                    const response = await fetch(`/api/posts/${postId}/comment`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: content }) });
+                    const newComment = await response.json();
+                    const commentList = document.querySelector(`.comments-list[data-postid="${postId}"]`);
+                    const newCommentElement = document.createElement('p');
+                    newCommentElement.innerHTML = `<a href="/profile/${newComment.user.username}" class="comment-username">${newComment.user.username}</a>: ${newComment.content}`;
+                    commentList.appendChild(newCommentElement);
+                    input.value = '';
+                } catch (error) { console.error('Error adding comment:', error); }
             });
         });
     </script>

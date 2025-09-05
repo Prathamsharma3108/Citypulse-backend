@@ -1,4 +1,3 @@
-// src/controllers/updatesController.js
 const { getNews, getWeather, getYouTubeVideos, getAds } = require('../services/apiService');
 const Post = require('../models/Post');
 
@@ -47,26 +46,15 @@ exports.deletePost = async (req, res) => {
 exports.getCityUpdates = async (req, res) => {
   const { city } = req.params;
   try {
-    // Fetch data from external APIs
     const news = await getNews(city);
     const weather = await getWeather(city);
     const videos = await getYouTubeVideos(city);
     const ads = await getAds();
     const posts = await Post.find({});
+    const socialMediaPosts = []; 
 
-    // You would integrate social media APIs here
-    const socialMediaPosts = []; // Placeholder
-
-    res.json({
-      news,
-      weather,
-      videos,
-      ads,
-      posts,
-      socialMediaPosts
-    });
+    res.json({ news, weather, videos, ads, posts, socialMediaPosts });
   } catch (error) {
-    console.error('Error fetching city updates:', error.message);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: error.message });
   }
 };

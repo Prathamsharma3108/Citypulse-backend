@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 
 const postSchema = new mongoose.Schema({
-    // Changed 'author' to a direct reference to the User model
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
@@ -9,11 +8,7 @@ const postSchema = new mongoose.Schema({
     },
     title: {
         type: String,
-        required: false, // Title can be optional
-    },
-    content: {
-        type: String,
-        required: true,
+        required: false,
     },
     content: {
         type: String,
@@ -24,9 +19,8 @@ const postSchema = new mongoose.Schema({
     },
     city: {
         type: String,
-        required: false, // City can be optional or derived
+        required: false,
     },
-    // Added the 'likes' array to track who has liked the post
     likes: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
@@ -35,7 +29,6 @@ const postSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Comment'
     }],
-    
     isPublished: {
         type: Boolean,
         default: true,
@@ -47,7 +40,7 @@ const postSchema = new mongoose.Schema({
         type: Date,
     }
 }, {
-    timestamps: true // Automatically adds createdAt and updatedAt
+    timestamps: true
 });
 
 const Post = mongoose.model('Post', postSchema);

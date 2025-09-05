@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Profile - City Pulse</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container" style="max-width: 600px;">
+        <h1 class="brand-title">Edit Profile</h1>
+        <p>Update your public profile information.</p>
+
+        <div class="form-container">
+            <form action="/api/users/profile" method="POST" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" name="name" value="<%= currentUser.name %>" required>
+                </div>
+                <div class="form-group">
+                    <label for="bio">Bio</label>
+                    <textarea id="bio" name="bio" rows="4" style="width: 100%; padding: 12px 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;"><%= currentUser.bio %></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="profilePicture">Change Profile Picture</label>
+                    <input type="file" id="profilePicture" name="profilePicture" accept="image/*">
+                </div>
+                <button type="submit" class="button" style="width: 100%; margin-top: 10px;">Save Changes</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

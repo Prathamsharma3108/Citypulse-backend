@@ -256,3 +256,34 @@ p {
     font-size: 0.9rem;
     font-weight: 600;
 }
+/* =================================
+   PROFILE PAGE STYLES
+   ================================= */
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    margin-bottom: 40px;
+}
+
+.profile-avatar img {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.profile-info h1 {
+    margin: 0;
+    font-size: 2rem;
+}
+
+.profile-info .username {
+    font-size: 1.2rem;
+    color: #606770;
+    margin-bottom: 10px;
+}
+
+.profile-info .bio {
+    margin-top: 10px;
+}

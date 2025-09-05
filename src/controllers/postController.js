@@ -1,18 +1,17 @@
 const Post = require('../models/Post');
 const Comment = require('../models/Comment');
+const User = require('../models/User');
 
-// Replace ONLY the createPost function in controllers/postController.js
-
+// @desc    Create a new post
+// @route   POST /api/posts
+// @access  Private
 const createPost = async (req, res) => {
-    // --- ADD THESE LOGS FOR DEBUGGING ---
-    console.log('--- Inside createPost Function ---');
-    console.log('USER DATA (req.user):', req.user);
-    console.log('FORM TEXT DATA (req.body):', req.body);
-    console.log('UPLOADED FILE DATA (req.file):', req.file);
-    console.log('--------------------------------');
-
     try {
         const { content } = req.body;
+        if (!content) {
+            return res.status(400).send('Post content is required.');
+        }
+
         const post = new Post({
             content,
             user: req.user.id,
@@ -31,8 +30,8 @@ const createPost = async (req, res) => {
 };
 
 // @desc    Like or unlike a post
-// Replace the existing likePost function
-
+// @route   POST /api/posts/:id/like
+// @access  Private
 const likePost = async (req, res) => {
     try {
         const post = await Post.findById(req.params.id);
@@ -55,7 +54,6 @@ const likePost = async (req, res) => {
         
         await post.save();
         
-        // Send back a JSON response with the new data
         res.json({ 
             likesCount: post.likes.length,
             isLiked: isLiked
@@ -68,21 +66,29 @@ const likePost = async (req, res) => {
 };
 
 // @desc    Add a comment to a post
+// @route   POST /api/posts/:id/comment
+// @access  Private
 const addComment = async (req, res) => {
     try {
         const post = await Post.findById(req.params.id);
         if (!post) {
             return res.status(404).send('Post not found');
         }
+
         const comment = new Comment({
             content: req.body.content,
             user: req.user.id,
             post: req.params.id
         });
         await comment.save();
+
         post.comments.push(comment._id);
         await post.save();
-        res.redirect('/dashboard');
+        
+        // Populate user details for the new comment to send back to the frontend
+        const newComment = await Comment.findById(comment._id).populate('user', 'username');
+
+        res.status(201).json(newComment); // Send new comment as JSON
     } catch (error) {
         console.error(error);
         res.status(500).send('Server Error');
@@ -90,19 +96,20 @@ const addComment = async (req, res) => {
 };
 
 // @desc    Get all posts (for API testing)
+// @route   GET /api/posts
+// @access  Private
 const getPosts = async (req, res) => {
     try {
         const posts = await Post.find().sort({ createdAt: -1 });
         res.json(posts);
     } catch (error) {
-        console.error(error);
-        res.status(500).send('Server Error');
+        res.status(500).json({ message: 'Server error' });
     }
 };
 
 module.exports = {
     createPost,
-    getPosts,
     likePost,
-    addComment
+    addComment,
+    getPosts
 };

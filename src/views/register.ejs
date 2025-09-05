@@ -4,35 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - City Pulse</title>
-    </head>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
+</head>
 <body>
-    <h1>Create a New Account</h1>
-    <form action="/api/users/register" method="POST">
-        <div>
-            <label for="name">Name:</label>
-            <input type="text" id="name" name="name" required>
+    <div class="container">
+        <h1 class="brand-title">City Pulse</h1>
+        <p>Create an account to join the community.</p>
+
+        <div class="form-container">
+            <form action="/api/users/register" method="POST">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="city">City</label>
+                    <input type="text" id="city" name="city" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" class="button" style="width: 100%; margin-top: 10px;">Register</button>
+            </form>
+            <div class="form-links">
+                <p>Already have an account? <a href="/login">Sign In</a></p>
+            </div>
         </div>
-        <div>
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" required>
-        </div>
-        <div>
-            <label for="password">Password:</label>
-            <input type="password" id="password" name="password" required>
-        </div>
-         <div>
-            <label for="city">City:</label>
-            <select name="city" id="city" required>
-                <option value="">--Select Your City--</option>
-                <option value="Mumbai">Mumbai</option>
-                <option value="Delhi">Delhi</option>
-                <option value="Bangalore">Bangalore</option>
-                <option value="Kolkata">Kolkata</option>
-                <option value="Chennai">Chennai</option>
-            </select>
-        </div>
-        <button type="submit">Register</button>
-    </form>
-     <p>Already have an account? <a href="/login">Login here</a></p>
+    </div>
 </body>
 </html>

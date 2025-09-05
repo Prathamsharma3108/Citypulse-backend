@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .admin-container { padding: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .delete-btn { background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+        td span.deleted { color: #999; font-style: italic; }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <h1>Admin Dashboard</h1>
+        <p>Welcome, <%= currentUser.name %>. <a href="/dashboard">Go to Main Dashboard</a></p>
+
+        <div class="card">
+            <h2>Users (<%= users.length %>)</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Admin</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% users.forEach(user => { %>
+                        <tr data-rowid="user-<%= user._id %>">
+                            <td><%= user._id %></td>
+                            <td><%= user.name %></td>
+                            <td><%= user.email %></td>
+                            <td><%= user.isAdmin ? 'Yes' : 'No' %></td>
+                            <td>
+                                <% if (!user.isAdmin) { %>
+                                    <button class="delete-btn" onclick="deleteItem('user', '<%= user._id %>')">Delete</button>
+                                <% } %>
+                            </td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>Posts (<%= posts.length %>)</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Post ID</th>
+                        <th>Content</th>
+                        <th>Author</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% posts.forEach(post => { %>
+                        <tr data-rowid="post-<%= post._id %>">
+                            <td><%= post._id %></td>
+                            <td><%= post.content.substring(0, 50) %>...</td>
+                            <td>
+                                <% if (post.user) { %>
+                                    <%= post.user.username %>
+                                <% } else { %>
+                                    <span class="deleted">[Deleted User]</span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <button class="delete-btn" onclick="deleteItem('post', '<%= post._id %>')">Delete</button>
+                            </td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        async function deleteItem(type, id) {
+            const endpoint = type === 'user' ? `/api/admin/users/${id}` : `/api/admin/posts/${id}`;
+            const itemName = type === 'user' ? 'user' : 'post';
+            
+            if (confirm(`Are you sure you want to delete this ${itemName}? This cannot be undone.`)) {
+                try {
+                    const response = await fetch(endpoint, {
+                        method: 'DELETE',
+                    });
+
+                    if (response.ok) {
+                        document.querySelector(`tr[data-rowid="${itemName}-${id}"]`).remove();
+                        alert(`${itemName.charAt(0).toUpperCase() + itemName.slice(1)} deleted successfully.`);
+                    } else {
+                        throw new Error(`Failed to delete ${itemName}.`);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert(`An error occurred. Could not delete ${itemName}.`);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
