@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat - City Pulse</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .chat-container { display: flex; height: calc(100vh - 40px); background: #fff; border-radius: 8px; overflow: hidden; }
+        .sidebar { flex: 0 0 280px; border-right: 1px solid #eee; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid #eee; }
+        .friends-list { overflow-y: auto; flex-grow: 1; }
+        .friend-item { display: flex; align-items: center; padding: 15px 20px; cursor: pointer; border-bottom: 1px solid #eee; }
+        .friend-item:hover, .friend-item.active { background-color: #f5f5f5; }
+        .friend-item img { width: 40px; height: 40px; border-radius: 50%; margin-right: 15px; }
+        .chat-window { flex-grow: 1; display: flex; flex-direction: column; }
+        .chat-header { padding: 20px; border-bottom: 1px solid #eee; font-weight: bold; }
+        .chat-messages { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .message { padding: 10px 15px; border-radius: 18px; max-width: 70%; line-height: 1.4; }
+        .message.sent { background-color: #007bff; color: white; align-self: flex-end; }
+        .message.received { background-color: #e9e9eb; color: #333; align-self: flex-start; }
+        .chat-input-form { display: flex; padding: 20px; border-top: 1px solid #eee; }
+        .chat-input-form input { flex-grow: 1; border: 1px solid #ddd; border-radius: 18px; padding: 10px 15px; }
+        .chat-input-form button { margin-left: 10px; border-radius: 18px; }
+        #select-chat-prompt { margin: auto; color: #888; }
+    </style>
+</head>
+<body style="padding: 20px; background-color: #f0f2f5;">
+
+    <div class="chat-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Chats</h2>
+                <p>Select a friend to start chatting.</p>
+            </div>
+            <div class="friends-list">
+                <% friends.forEach(friend => { %>
+                    <div class="friend-item" data-id="<%= friend._id %>" data-username="<%= friend.username %>">
+                        <img src="<%= friend.profilePicture %>" alt="<%= friend.username %>">
+                        <span><%= friend.username %></span>
+                    </div>
+                <% }) %>
+            </div>
+        </aside>
+
+        <main class="chat-window">
+            <div class="chat-header" id="chat-header">
+                Select a Conversation
+            </div>
+            <div class="chat-messages" id="chat-messages">
+                <p id="select-chat-prompt">Select a friend from the list to see your conversation.</p>
+            </div>
+            <form class="chat-input-form" id="message-form" style="display: none;">
+                <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
+                <button type="submit" class="button">Send</button>
+            </form>
+        </main>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const currentUserId = "<%= currentUser._id %>";
+        
+        let activeChatUserId = null;
+
+        const friendsList = document.querySelector('.friends-list');
+        const chatHeader = document.getElementById('chat-header');
+        const chatMessages = document.getElementById('chat-messages');
+        const messageForm = document.getElementById('message-form');
+        const messageInput = document.getElementById('message-input');
+        const selectChatPrompt = document.getElementById('select-chat-prompt');
+
+        // 1. Let the server know who we are
+        socket.emit('join', currentUserId);
+
+        // 2. Handle clicking on a friend
+        friendsList.addEventListener('click', (e) => {
+            const friendItem = e.target.closest('.friend-item');
+            if (!friendItem) return;
+
+            activeChatUserId = friendItem.dataset.id;
+            
+            // Highlight the selected friend
+            document.querySelectorAll('.friend-item').forEach(item => item.classList.remove('active'));
+            friendItem.classList.add('active');
+
+            // Update UI
+            chatHeader.textContent = `Chat with ${friendItem.dataset.username}`;
+            messageForm.style.display = 'flex';
+            selectChatPrompt.style.display = 'none';
+            chatMessages.innerHTML = ''; // Clear previous messages
+
+            // TODO: In a full app, you would fetch past messages here via an API call
+        });
+
+        // 3. Handle sending a message
+        messageForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const content = messageInput.value.trim();
+            if (content && activeChatUserId) {
+                const messageData = {
+                    senderId: currentUserId,
+                    receiverId: activeChatUserId,
+                    content: content
+                };
+
+                // Send message to the server
+                socket.emit('sendMessage', messageData);
+
+                // Display the sent message immediately
+                appendMessage(content, 'sent');
+                messageInput.value = '';
+            }
+        });
+
+        // 4. Listen for incoming messages
+        socket.on('newMessage', (message) => {
+            // Only display the message if it's part of the active chat
+            if (message.sender === activeChatUserId) {
+                appendMessage(message.content, 'received');
+            }
+        });
+        
+        // Helper function to add a message to the chat window
+        function appendMessage(content, type) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', type);
+            messageElement.textContent = content;
+            chatMessages.appendChild(messageElement);
+            chatMessages.scrollTop = chatMessages.scrollHeight; // Scroll to bottom
+        }
+    </script>
+</body>
+</html>

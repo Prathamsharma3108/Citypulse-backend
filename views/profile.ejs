@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= profileUser.name %> (@<%= profileUser.username %>) - City Pulse</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .post-image-container img { max-width: 100%; height: auto; display: block; border-radius: 8px; }
+        .profile-header { align-items: center; }
+        .profile-actions { margin-left: auto; display: flex; gap: 10px; }
+    </style>
+</head>
+<body style="align-items: flex-start; padding: 2.5vh 20px;">
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-profile">
+                <img src="<%= currentUser.profilePicture %>" alt="Profile Picture">
+                <h2><%= currentUser.name %></h2>
+                <p>@<%= currentUser.username %></p>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/dashboard">Dashboard</a>
+                <a href="/profile">My Profile</a>
+                <% if (currentUser && currentUser.isAdmin) { %>
+                    <a href="/admin" style="color: #007bff; font-weight: bold;">Admin Panel</a>
+                <% } %>
+                <a href="/logout">Logout</a>
+            </nav>
+        </aside>
+
+        <main class="main-content" style="display: grid; grid-template-columns: 1fr; gap: 20px;">
+            <div class="card profile-header-card">
+                <div class="profile-header">
+                    <div class="profile-avatar">
+                        <img src="<%= profileUser.profilePicture %>" alt="<%= profileUser.name %>'s profile picture">
+                    </div>
+                    <div class="profile-info">
+                        <h2><%= profileUser.name %></h2>
+                        <p class="username">@<%= profileUser.username %></p>
+                        <p class="bio"><%= profileUser.bio %></p>
+                    </div>
+                    <div class="profile-actions">
+                        <% if (currentUser._id.equals(profileUser._id)) { %>
+                            <a href="/edit-profile" class="button">Edit Profile</a>
+                        <% } else {
+                            const areFriends = (currentUser.friends || []).some(friendId => friendId.equals(profileUser._id));
+                            const requestSent = (currentUser.friendRequestsSent || []).some(userId => userId.equals(profileUser._id));
+                            const requestReceived = (currentUser.friendRequestsReceived || []).some(userId => userId.equals(profileUser._id));
+
+                            if (areFriends) { %>
+                                <button class="button-secondary" onclick="handleFriendAction('remove', '<%= profileUser._id %>')">Unfriend</button>
+                            <% } else if (requestSent) { %>
+                                <button class="button-secondary" disabled>Request Sent</button>
+                                <button class="button" onclick="handleFriendAction('remove', '<%= profileUser._id %>')">Cancel</button>
+                            <% } else if (requestReceived) { %>
+                                <button class="button" onclick="handleFriendAction('accept', '<%= profileUser._id %>')">Accept</button>
+                                <button class="button-secondary" onclick="handleFriendAction('remove', '<%= profileUser._id %>')">Decline</button>
+                            <% } else { %>
+                                <button class="button" onclick="handleFriendAction('send', '<%= profileUser._id %>')">Add Friend</button>
+                            <% }
+                        } %>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feed-column">
+                <h2>Posts by @<%= profileUser.username %></h2>
+                <% if (posts.length > 0) { %>
+                    <% posts.forEach(post => { %>
+                        <div class="post-card" data-postid="<%= post._id %>">
+                            <div class="post-header">
+                                <img src="<%= profileUser.profilePicture %>" alt="<%= profileUser.username %>'s profile picture">
+                                <a href="/profile/<%= profileUser.username %>"><%= profileUser.username %></a>
+                            </div>
+                            <% if (post.imageUrl) { %>
+                                <div class="post-image-container"><img src="<%= post.imageUrl %>" alt="Post image"></div>
+                            <% } %>
+                            <div class="post-body"><p><%= post.content %></p></div>
+                            <div class="post-actions">
+                                <button class="like-button <%= post.likes.some(like => like.equals(currentUser._id)) ? 'liked' : '' %>">
+                                    ❤️ <span class="likes-count"><%= post.likes.length %></span>
+                                </button>
+                                <button class="comment-button">💬 <%= post.comments.length %></button>
+                            </div>
+                            <div class="comments-section">
+                                <div class="comments-list" data-postid="<%= post._id %>">
+                                    <% post.comments.forEach(comment => { %>
+                                        <p><a href="/profile/<%= comment.user.username %>" class="comment-username"><%= comment.user.username %></a>: <%= comment.content %></p>
+                                    <% }) %>
+                                </div>
+                                <form class="comment-form" data-postid="<%= post._id %>">
+                                    <input type="text" name="content" placeholder="Add a comment..." required>
+                                    <button type="submit">Post</button>
+                                </form>
+                            </div>
+                        </div>
+                    <% }) %>
+                <% } else { %>
+                    <div class="card"><p>@<%= profileUser.username %> hasn't posted anything yet.</p></div>
+                <% } %>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Function for handling friend actions
+        async function handleFriendAction(action, userId) {
+            let method = 'POST';
+            if (action === 'remove' || action === 'decline' || action === 'cancel') {
+                action = 'remove'; // All these actions use the same 'remove' endpoint
+                method = 'DELETE';
+            }
+            
+            try {
+                const response = await fetch(`/api/friends/${action}/${userId}`, { method });
+                if (response.ok) {
+                    window.location.reload(); // Refresh to show the new status
+                } else {
+                    const data = await response.json();
+                    alert('Error: ' + (data.message || 'Something went wrong'));
+                }
+            } catch (error) {
+                console.error('Friend action failed:', error);
+                alert('An error occurred.');
+            }
+        }
+
+        // Event listener for like buttons
+        document.addEventListener('click', async (event) => {
+            if (event.target.closest('.like-button')) {
+                const button = event.target.closest('.like-button');
+                const postId = button.closest('.post-card').dataset.postid;
+                try {
+                    const response = await fetch(`/api/posts/${postId}/like`, { method: 'POST' });
+                    const data = await response.json();
+                    button.querySelector('.likes-count').textContent = data.likesCount;
+                    button.classList.toggle('liked', data.isLiked);
+                } catch (error) { console.error('Error liking post:', error); }
+            }
+        });
+
+        // Event listener for comment forms
+        document.querySelectorAll('.comment-form').forEach(form => {
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const postId = form.dataset.postid;
+                const input = form.querySelector('input[name="content"]');
+                const content = input.value;
+                if (!content) return;
+                try {
+                    const response = await fetch(`/api/posts/${postId}/comment`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: content }) });
+                    const newComment = await response.json();
+                    const commentList = document.querySelector(`.comments-list[data-postid="${postId}"]`);
+                    const newCommentElement = document.createElement('p');
+                    newCommentElement.innerHTML = `<a href="/profile/${newComment.user.username}" class="comment-username">${newComment.user.username}</a>: ${newComment.content}`;
+                    commentList.appendChild(newCommentElement);
+                    input.value = '';
+                } catch (error) { console.error('Error adding comment:', error); }
+            });
+        });
+    </script>
+</body>
+</html>
