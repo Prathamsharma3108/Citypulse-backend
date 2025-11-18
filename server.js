@@ -15,6 +15,20 @@ const postRoutes = require('./routes/postRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const friendRoutes = require('./routes/friendRoutes');
+
+// --- Import ALL Auth Controller functions ---
+// This controller will now handle the full auth flow, including OTP
+const { 
+    renderLoginPage, 
+    renderRegisterPage, 
+    registerUser, 
+    loginUser, 
+    forgotPassword, 
+    resetPassword,
+    renderOtpPage,
+    verifyOtp
+} = require('./controllers/authController'); // Ensure this path is correct
+
 const User = require('./models/User');
 const Post = require('./models/Post');
 const Conversation = require('./models/Conversation');
@@ -56,22 +70,46 @@ app.use(async (req, res, next) => {
 });
 
 // API Routers
-app.use('/api/users', userRoutes);
+// userRoutes will now just handle /profile updates, etc.
+app.use('/api/users', userRoutes); 
 app.use('/api/posts', postRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/friends', friendRoutes);
 
-// Page Rendering Routes
+// --- NEW Authentication Routes ---
+// These routes handle rendering pages and processing all auth forms.
+// Replaces the old /login and /register routes.
+
+// Page Renders
+app.get('/auth/login', renderLoginPage);
+app.get('/auth/register', renderRegisterPage);
+app.get('/auth/forgot-password', (req, res) => res.render('forgot-password'));
+app.get('/auth/reset-password/:resetToken', (req, res) => res.render('reset-password', { resetToken: req.params.resetToken }));
+
+// New OTP Page Render
+app.get('/auth/verify-otp', renderOtpPage);
+
+// Form Handlers
+app.post('/auth/register', registerUser);
+app.post('/auth/login', loginUser); // This now triggers the OTP flow
+app.post('/auth/forgot-password', forgotPassword);
+app.post('/auth/reset-password/:resetToken', resetPassword);
+
+// New OTP Form Handler
+app.post('/auth/verify-otp', verifyOtp);
+
+
+// --- Page Rendering Routes ---
 app.get('/', (req, res) => res.render('home'));
-app.get('/login', (req, res) => res.render('login', { error: '' }));
-app.get('/register', (req, res) => res.render('register'));
+
+// Removed old /login and /register routes, as they are now handled above
 
 app.get('/logout', (req, res) => {
     req.session.destroy(err => {
         if (err) return res.redirect('/dashboard');
         res.clearCookie('connect.sid');
-        res.redirect('/login');
+        res.redirect('/auth/login'); // Redirect to new login page
     });
 });
 

@@ -14,7 +14,7 @@
         <p>Create an account to join the community.</p>
 
         <div class="form-container">
-            <form action="/api/users/register" method="POST">
+            <form action="/auth/register" method="POST">
                 <div class="form-group">
                     <label for="name">Full Name</label>
                     <input type="text" id="name" name="name" required>
@@ -38,7 +38,7 @@
                 <button type="submit" class="button" style="width: 100%; margin-top: 10px;">Register</button>
             </form>
             <div class="form-links">
-                <p>Already have an account? <a href="/login">Sign In</a></p>
+                <p>Already have an account? <a href="/auth/login">Sign In</a></p>
             </div>
         </div>
     </div>

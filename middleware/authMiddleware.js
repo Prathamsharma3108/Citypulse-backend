@@ -9,12 +9,13 @@ const protect = async (req, res, next) => {
       next(); // If user is found, proceed to the next function
     } catch (error) {
       console.error(error);
-      res.redirect('/login'); // If error, redirect to login
+      res.redirect('/auth/login'); // If error, redirect to login
     }
   } else {
     // If there is no session userId, redirect the user to the login page
-    res.redirect('/login');
+    res.redirect('/auth/login');
   }
+
 };
 
 module.exports = { protect };
