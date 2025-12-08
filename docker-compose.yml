@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  # Service 1: MongoDB Database
+  mongo:
+    image: mongo:latest
+    container_name: citypulse_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  # Service 2: Your Node.js App
+  app:
+    build: .
+    container_name: citypulse_app
+    ports:
+      - "5001:5001"
+    env_file:
+      - .env  # <--- This loads all your API keys automatically!
+    environment:
+      # We explicitly OVERRIDE the DB connection here for Docker
+      - MONGO_URI=mongodb://mongo:27017/citypulse
+      - PORT=5001
+    depends_on:
+      - mongo
+
+volumes:
+  mongo-data:
