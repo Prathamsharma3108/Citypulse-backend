@@ -5,7 +5,9 @@ const {
     loginUser, 
     forgotPassword, 
     resetPassword, 
-    updateProfile 
+    updateProfile,
+    getUserProfile,
+    getMe
 } = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
 const upload = require('../config/cloudinary');
@@ -15,6 +17,8 @@ router.post('/register', registerUser);
 router.post('/login', loginUser);
 
 // --- Profile Routes ---
+router.get('/me', protect, getMe);
+router.get('/profile/:username', protect, getUserProfile);
 // The upload.single() middleware handles the file upload before updateProfile is called
 router.post('/profile', protect, upload.single('profilePicture'), updateProfile);
 

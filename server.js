@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const path = require('path');
 const dotenv = require('dotenv');
 const session = require('express-session');
@@ -39,17 +40,62 @@ const { getWeatherData, getNewsData, getYoutubeVideos } = require('./services/ap
 dotenv.config();
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+
+// Trust reverse proxy (crucial for Render and HTTPS session cookies)
+app.set('trust proxy', 1);
+
+const allowedOrigins = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:5175",
+    "http://localhost:5176",
+    "http://localhost:5177",
+    ...(process.env.CLIENT_URL ? [process.env.CLIENT_URL] : [])
+];
+
+const corsOriginCheck = (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, curl, server-to-server)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+        return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'));
+};
+
+const io = new Server(server, {
+    cors: {
+        origin: corsOriginCheck,
+        methods: ["GET", "POST"],
+        credentials: true
+    }
+});
 const PORT = process.env.PORT || 5000;
 
 connectDB();
 
+// Request logger
+app.use((req, res, next) => {
+    console.log(`${req.method} ${req.url}`);
+    next();
+});
+
 // Middleware
+app.use(cors({
+    origin: corsOriginCheck,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+}));
 app.use(session({
-    secret: process.env.SESSION_SECRET,
+    secret: process.env.SESSION_SECRET || 'citypulse_default_secret',
     resave: false,
     saveUninitialized: false,
-    store: MongoStore.create({ mongoUrl: process.env.MONGO_URI })
+    store: MongoStore.create({ mongoUrl: process.env.MONGO_URI }),
+    proxy: true,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
+    }
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -58,6 +104,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+
+// Serve React App in production
+app.use(express.static(path.join(__dirname, 'my-modern-app/dist')));
 
 // Global middleware to set currentUser in all views
 app.use(async (req, res, next) => {
@@ -69,49 +118,51 @@ app.use(async (req, res, next) => {
     next();
 });
 
+// Health Check Endpoint (useful for Render deployment monitoring)
+app.get('/api/health', (req, res) => {
+    res.status(200).json({ status: 'ok', uptime: process.uptime() });
+});
+
 // API Routers
-// userRoutes will now just handle /profile updates, etc.
-app.use('/api/users', userRoutes); 
+app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/friends', friendRoutes);
+app.use('/api/chat', require('./routes/chatRoutes'));
+app.use('/api', require('./routes/updates'));
 
-// --- NEW Authentication Routes ---
-// These routes handle rendering pages and processing all auth forms.
-// Replaces the old /login and /register routes.
-
-// Page Renders
+// --- Authentication Routes ---
+// Page Renders (EJS)
 app.get('/auth/login', renderLoginPage);
 app.get('/auth/register', renderRegisterPage);
+app.get('/auth/verify-otp', renderOtpPage);
 app.get('/auth/forgot-password', (req, res) => res.render('forgot-password'));
 app.get('/auth/reset-password/:resetToken', (req, res) => res.render('reset-password', { resetToken: req.params.resetToken }));
 
-// New OTP Page Render
-app.get('/auth/verify-otp', renderOtpPage);
-
-// Form Handlers
+// Form / API Handlers
 app.post('/auth/register', registerUser);
-app.post('/auth/login', loginUser); // This now triggers the OTP flow
+app.post('/auth/login', loginUser);
+app.post('/auth/verify-otp', verifyOtp);
 app.post('/auth/forgot-password', forgotPassword);
 app.post('/auth/reset-password/:resetToken', resetPassword);
 
-// New OTP Form Handler
-app.post('/auth/verify-otp', verifyOtp);
-
-
-// --- Page Rendering Routes ---
-app.get('/', (req, res) => res.render('home'));
-
-// Removed old /login and /register routes, as they are now handled above
+app.get('/auth/me', protect, async (req, res) => {
+    res.json(res.locals.currentUser);
+});
 
 app.get('/logout', (req, res) => {
     req.session.destroy(err => {
-        if (err) return res.redirect('/dashboard');
         res.clearCookie('connect.sid');
-        res.redirect('/auth/login'); // Redirect to new login page
+        if (req.headers.accept && req.headers.accept.includes('application/json')) {
+            return res.json({ message: 'Logged out successfully' });
+        }
+        res.redirect('/auth/login');
     });
 });
+
+// --- Page Rendering Routes ---
+app.get('/', (req, res) => res.render('home'));
 
 app.get('/edit-profile', protect, (req, res) => res.render('edit-profile'));
 
@@ -166,6 +217,19 @@ app.get('/chat', protect, async (req, res) => {
         console.error('Error loading chat page:', error);
         res.status(500).send('Server Error');
     }
+});
+
+// Fallback for SPA or generic requests (serves React app if built, otherwise API message)
+app.get('*', (req, res) => {
+    if (req.url.startsWith('/api') || req.url.startsWith('/auth')) {
+        return res.status(404).json({ message: 'API route not found' });
+    }
+    const indexPath = path.join(__dirname, 'my-modern-app/dist/index.html');
+    res.sendFile(indexPath, (err) => {
+        if (err) {
+            res.status(200).send('CityPulse Backend API is live');
+        }
+    });
 });
 
 // Socket.IO Real-Time Chat Logic

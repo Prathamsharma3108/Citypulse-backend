@@ -4,25 +4,32 @@ const getWeatherData = async (city) => {
   try {
     const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${process.env.WEATHER_API_KEY}&units=metric`;
     console.log('Requesting Weather URL:', apiUrl);
-    const response = await axios.get(
-      `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${process.env.WEATHER_API_KEY}&units=metric`
-    );
+    const response = await axios.get(apiUrl);
     return response.data;
   } catch (error) {
     console.error('Error fetching weather data:', error.message);
-    return { error: 'Could not fetch weather data.' };
+    return null;
   }
 };
 
-const getNewsData = async (countryCode = 'in') => { // Default to India
+const getNewsData = async (countryCode = 'in') => {
   try {
     const response = await axios.get(
       `https://newsapi.org/v2/top-headlines?country=${countryCode}&apiKey=${process.env.NEWS_API_KEY}`
     );
-    return response.data.articles.slice(0, 5); // Return top 5 articles
+    if (response.data.articles && response.data.articles.length > 0) {
+      return response.data.articles.slice(0, 5);
+    }
+    const fallbackResponse = await axios.get(
+      `https://newsapi.org/v2/everything?q=${countryCode}&sortBy=publishedAt&apiKey=${process.env.NEWS_API_KEY}`
+    );
+    if (fallbackResponse.data.articles) {
+      return fallbackResponse.data.articles.slice(0, 5);
+    }
+    return [];
   } catch (error) {
     console.error('Error fetching news data:', error.message);
-    return { error: 'Could not fetch news data.' };
+    return [];
   }
 };
 
@@ -37,10 +44,10 @@ const getYoutubeVideos = async (city) => {
                 key: process.env.YOUTUBE_API_KEY,
             },
         });
-        return response.data.items;
+        return response.data.items || [];
     } catch (error) {
-        console.error('Error fetching YouTube data:', error.response.data.error);
-        return { error: 'Could not fetch YouTube videos.' };
+        console.error('Error fetching YouTube data:', error.response?.data?.error || error.message);
+        return [];
     }
 };
 

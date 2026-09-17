@@ -42,18 +42,35 @@ const updateProfile = async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
         if (user) {
+            user.name = req.body.name || user.name;
             user.bio = req.body.bio || user.bio;
+            user.city = req.body.city || user.city;
+            
             if (req.file) {
                 user.profilePicture = req.file.path;
             }
+            
             await user.save();
-            res.redirect('/profile');
+            
+            // Return JSON for the frontend
+            res.json({
+                message: 'Profile updated successfully',
+                user: {
+                    id: user._id,
+                    username: user.username,
+                    name: user.name,
+                    email: user.email,
+                    city: user.city,
+                    bio: user.bio,
+                    profilePicture: user.profilePicture
+                }
+            });
         } else {
-            res.status(404).send('User not found');
+            res.status(404).json({ message: 'User not found' });
         }
     } catch (error) {
         console.error(error);
-        res.status(500).send('Server Error');
+        res.status(500).json({ message: 'Server Error' });
     }
 };
 
@@ -103,10 +120,43 @@ const resetPassword = async (req, res) => {
     }
 };
 
-module.exports = {
-    registerUser,
-    loginUser,
-    updateProfile,
-    forgotPassword,
-    resetPassword
+const getUserProfile = async (req, res) => {
+    try {
+        const user = await User.findOne({ username: req.params.username })
+            .select('-password')
+            .populate('friends', 'username profilePicture')
+            .populate('friendRequestsReceived', 'username profilePicture');
+        
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.json(user);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+const getMe = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id)
+            .select('-password')
+            .populate('friends', 'username profilePicture')
+            .populate('friendRequestsReceived', 'username profilePicture');
+        res.json(user);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+module.exports = { 
+    registerUser, 
+    loginUser, 
+    updateProfile, 
+    forgotPassword, 
+    resetPassword,
+    getUserProfile,
+    getMe
 };

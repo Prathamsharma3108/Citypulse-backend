@@ -3,8 +3,15 @@ const crypto = require('crypto');
 const sendEmail = require('../utils/sendEmail'); // (Ensure this path is correct)
 
 // --- Functions to RENDER pages ---
-const renderLoginPage = (req, res) => res.render('login', { pageTitle: 'Login', error: null });
-const renderRegisterPage = (req, res) => res.render('register', { pageTitle: 'Register' });
+const renderLoginPage = (req, res) => {
+    console.log('[AUTH] Rendering login page');
+    res.render('login', { pageTitle: 'Login', error: null });
+};
+
+const renderRegisterPage = (req, res) => {
+    console.log('[AUTH] Rendering register page');
+    res.render('register', { pageTitle: 'Register' });
+};
 
 // --- Functions to HANDLE form submissions ---
 
@@ -37,47 +44,64 @@ const registerUser = async (req, res) => {
 // @route   POST /auth/login
 const loginUser = async (req, res) => {
     const { email, password } = req.body;
+    console.log(`[AUTH] Login attempt for email: ${email}`);
     try {
         const user = await User.findOne({ email });
 
-        // Check user and password
-        if (user && (await user.matchPassword(password))) {
-            // --- Password is correct, now send OTP ---
+        if (!user) {
+            console.log(`[AUTH] User NOT found for email: ${email}`);
+            return res.render('login', { pageTitle: 'Login', error: 'Invalid email or password' });
+        }
 
-            // 1. Generate 6-digit OTP
+        console.log(`[AUTH] User found: ${user.username} (${user._id})`);
+
+        // Check password
+        const isMatch = await user.matchPassword(password);
+        console.log(`[AUTH] Password match for ${email}: ${isMatch}`);
+
+        if (isMatch) {
+            // --- Password is correct, now send OTP ---
             const otp = Math.floor(100000 + Math.random() * 900000).toString();
-            
-            // 2. Set OTP expiry (10 minutes from now)
             const otpExpire = Date.now() + 10 * 60 * 1000; 
 
-            // 3. Save OTP to user in database
             user.otp = otp;
             user.otpExpire = otpExpire;
             await user.save();
+            console.log(`[AUTH] OTP generated for ${email}: ${otp}`);
 
-            // 4. Send email
             try {
+                console.log(`[AUTH] Attempting to send OTP email to ${user.email}`);
                 await sendEmail({
                     email: user.email,
                     subject: 'Your City Pulse Login OTP',
                     message: `Your One-Time Password (OTP) for login is: ${otp}\n\nIt is valid for 10 minutes.`
                 });
+                console.log(`[AUTH] OTP email sent successfully to ${user.email}`);
 
-                // 5. Store email in session and redirect to OTP page
-                req.session.otpEmail = user.email; // Store email to know who is verifying
-                res.redirect('/auth/verify-otp');
+                req.session.otpEmail = user.email; 
+                console.log(`[AUTH] Session otpEmail set to: ${req.session.otpEmail}`);
+                
+                // IMPORTANT: Ensure session is saved before redirecting
+                req.session.save((err) => {
+                    if (err) {
+                        console.error('[AUTH] Session save error:', err);
+                        return res.render('login', { pageTitle: 'Login', error: 'Session error. Please try again.' });
+                    }
+                    console.log(`[AUTH] Redirecting to /auth/verify-otp`);
+                    res.redirect('/auth/verify-otp');
+                });
 
             } catch (emailError) {
-                console.error('Email sending error:', emailError);
+                console.error('[AUTH] Email sending error:', emailError);
                 res.render('login', { pageTitle: 'Login', error: 'Could not send OTP. Please try again.' });
             }
 
         } else {
-            // --- Invalid credentials ---
+            console.log(`[AUTH] Password mismatch for ${email}`);
             res.render('login', { pageTitle: 'Login', error: 'Invalid email or password' });
         }
     } catch (error) {
-        console.error(error);
+        console.error('[AUTH] Login Error:', error);
         res.status(500).send('Server error during login.');
     }
 };
@@ -140,8 +164,9 @@ const resetPassword = async (req, res) => {
 // @route   GET /auth/verify-otp
 const renderOtpPage = (req, res) => {
     const email = req.session.otpEmail;
+    console.log(`[AUTH] Rendering OTP page. Session email: ${email}`);
     if (!email) {
-        // If user hasn't just logged in, redirect to login
+        console.log(`[AUTH] No email in session, redirecting to login`);
         return res.redirect('/auth/login');
     }
     res.render('verify-otp', { 
@@ -157,7 +182,10 @@ const verifyOtp = async (req, res) => {
     const { otp } = req.body;
     const email = req.session.otpEmail;
 
+    console.log(`[AUTH] Verifying OTP: ${otp} for email: ${email}`);
+
     if (!email) {
+        console.log(`[AUTH] No email in session during verification, redirecting to login`);
         return res.redirect('/auth/login');
     }
 
@@ -169,6 +197,7 @@ const verifyOtp = async (req, res) => {
         });
 
         if (!user) {
+            console.log(`[AUTH] Invalid or expired OTP for ${email}`);
             // --- Invalid or expired OTP ---
             return res.render('verify-otp', {
                 pageTitle: 'Verify OTP',
@@ -176,6 +205,8 @@ const verifyOtp = async (req, res) => {
                 error: 'Invalid or expired OTP. Please try again.'
             });
         }
+
+        console.log(`[AUTH] OTP verified for ${user.username}`);
 
         // --- OTP is correct! ---
         
@@ -190,11 +221,24 @@ const verifyOtp = async (req, res) => {
         // 3. Clear the session email
         req.session.otpEmail = undefined;
 
-        // 4. Redirect to dashboard
-        res.redirect('/dashboard');
+        console.log(`[AUTH] Login successful, session userId set: ${req.session.userId}`);
+
+        // IMPORTANT: Save session before redirect
+        req.session.save((err) => {
+            if (err) {
+                console.error('[AUTH] Session save error after OTP:', err);
+                return res.status(500).send('Server error during login.');
+            }
+            // 4. Redirect to dashboard
+            if (req.headers.accept && req.headers.accept.includes('application/json')) {
+                return res.json({ message: 'Login successful', user: { id: user._id, username: user.username } });
+            }
+            console.log(`[AUTH] Redirecting to /dashboard`);
+            res.redirect('/dashboard');
+        });
 
     } catch (error) {
-        console.error('OTP verification error:', error);
+        console.error('[AUTH] OTP verification error:', error);
         res.status(500).send('Server error.');
     }
 };

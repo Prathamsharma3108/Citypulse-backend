@@ -22,6 +22,10 @@ const createPost = async (req, res) => {
         }
 
         await post.save();
+        
+        if (req.headers.accept && req.headers.accept.includes('application/json')) {
+            return res.status(201).json(post);
+        }
         res.redirect('/dashboard');
     } catch (error) {
         console.error('ERROR during post creation:', error.message);
@@ -100,7 +104,16 @@ const addComment = async (req, res) => {
 // @access  Private
 const getPosts = async (req, res) => {
     try {
-        const posts = await Post.find().sort({ createdAt: -1 });
+        const posts = await Post.find()
+            .sort({ createdAt: -1 })
+            .populate('user', 'username profilePicture')
+            .populate({
+                path: 'comments',
+                populate: {
+                    path: 'user',
+                    select: 'username'
+                }
+            });
         res.json(posts);
     } catch (error) {
         res.status(500).json({ message: 'Server error' });

@@ -1,5 +1,15 @@
 const User = require('../models/User');
 
+exports.getFriends = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).populate('friends', 'username profilePicture name');
+        res.status(200).json(user.friends || []);
+    } catch (error) {
+        console.error('Error fetching friends:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
 exports.sendFriendRequest = async (req, res) => {
     try {
         const sender = await User.findById(req.user.id);

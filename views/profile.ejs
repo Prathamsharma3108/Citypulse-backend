@@ -11,7 +11,7 @@
         .profile-actions { margin-left: auto; display: flex; gap: 10px; }
     </style>
 </head>
-<body style="align-items: flex-start; padding: 2.5vh 20px;">
+<body style="padding: 0; overflow: hidden; background-color: var(--bg-dark);">
     <div class="dashboard-container">
         <aside class="sidebar">
             <div class="sidebar-profile">
@@ -21,28 +21,29 @@
             </div>
             <nav class="sidebar-nav">
                 <a href="/dashboard">Dashboard</a>
-                <a href="/profile">My Profile</a>
+                <a href="/profile" class="<%= currentUser._id.equals(profileUser._id) ? 'active' : '' %>">My Profile</a>
+                <a href="/chat">Chats</a>
                 <% if (currentUser && currentUser.isAdmin) { %>
-                    <a href="/admin" style="color: #007bff; font-weight: bold;">Admin Panel</a>
+                    <a href="/admin" style="color: #60a5fa; font-weight: bold;">Admin Panel</a>
                 <% } %>
-                <a href="/logout">Logout</a>
+                <a href="/logout" style="margin-top: auto; color: #ef4444;">Logout</a>
             </nav>
         </aside>
 
-        <main class="main-content" style="display: grid; grid-template-columns: 1fr; gap: 20px;">
-            <div class="card profile-header-card">
+        <main class="main-content" style="display: block; padding: 2rem; max-width: 1000px; margin: 0 auto;">
+            <div class="card profile-header-card" style="margin-bottom: 2rem;">
                 <div class="profile-header">
                     <div class="profile-avatar">
                         <img src="<%= profileUser.profilePicture %>" alt="<%= profileUser.name %>'s profile picture">
                     </div>
                     <div class="profile-info">
-                        <h2><%= profileUser.name %></h2>
-                        <p class="username">@<%= profileUser.username %></p>
-                        <p class="bio"><%= profileUser.bio %></p>
+                        <h2 style="font-size: 2rem; margin-bottom: 0.25rem;"><%= profileUser.name %></h2>
+                        <p class="username" style="color: var(--primary); font-weight: 600; margin-bottom: 1rem;">@<%= profileUser.username %></p>
+                        <p class="bio" style="color: var(--text-main); font-size: 1rem; max-width: 500px;"><%= profileUser.bio || 'No bio yet.' %></p>
                     </div>
                     <div class="profile-actions">
                         <% if (currentUser._id.equals(profileUser._id)) { %>
-                            <a href="/edit-profile" class="button">Edit Profile</a>
+                            <a href="/edit-profile" class="button" style="width: auto; padding: 0.75rem 1.5rem;">Edit Profile</a>
                         <% } else {
                             const areFriends = (currentUser.friends || []).some(friendId => friendId.equals(profileUser._id));
                             const requestSent = (currentUser.friendRequestsSent || []).some(userId => userId.equals(profileUser._id));
@@ -52,31 +53,33 @@
                                 <button class="button-secondary" onclick="handleFriendAction('remove', '<%= profileUser._id %>')">Unfriend</button>
                             <% } else if (requestSent) { %>
                                 <button class="button-secondary" disabled>Request Sent</button>
-                                <button class="button" onclick="handleFriendAction('remove', '<%= profileUser._id %>')">Cancel</button>
+                                <button class="button" onclick="handleFriendAction('remove', '<%= profileUser._id %>')" style="width: auto; padding: 0.75rem 1rem; margin-left: 0.5rem;">Cancel</button>
                             <% } else if (requestReceived) { %>
-                                <button class="button" onclick="handleFriendAction('accept', '<%= profileUser._id %>')">Accept</button>
-                                <button class="button-secondary" onclick="handleFriendAction('remove', '<%= profileUser._id %>')">Decline</button>
+                                <button class="button" onclick="handleFriendAction('accept', '<%= profileUser._id %>')" style="width: auto; padding: 0.75rem 1.5rem;">Accept</button>
+                                <button class="button-secondary" onclick="handleFriendAction('remove', '<%= profileUser._id %>')" style="margin-left: 0.5rem;">Decline</button>
                             <% } else { %>
-                                <button class="button" onclick="handleFriendAction('send', '<%= profileUser._id %>')">Add Friend</button>
+                                <button class="button" onclick="handleFriendAction('send', '<%= profileUser._id %>')" style="width: auto; padding: 0.75rem 1.5rem;">Add Friend</button>
                             <% }
                         } %>
                     </div>
                 </div>
             </div>
 
-            <div class="feed-column">
-                <h2>Posts by @<%= profileUser.username %></h2>
+            <div class="feed-column" style="max-width: 700px; margin: 0 auto;">
+                <h2 style="font-size: 1.5rem; color: var(--text-main); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                    Posts by @<%= profileUser.username %>
+                </h2>
                 <% if (posts.length > 0) { %>
                     <% posts.forEach(post => { %>
                         <div class="post-card" data-postid="<%= post._id %>">
                             <div class="post-header">
                                 <img src="<%= profileUser.profilePicture %>" alt="<%= profileUser.username %>'s profile picture">
-                                <a href="/profile/<%= profileUser.username %>"><%= profileUser.username %></a>
+                                <a href="/profile/<%= profileUser.username %>">@<%= profileUser.username %></a>
                             </div>
                             <% if (post.imageUrl) { %>
-                                <div class="post-image-container"><img src="<%= post.imageUrl %>" alt="Post image"></div>
+                                <div class="post-image-container" style="margin-bottom: 1rem;"><img src="<%= post.imageUrl %>" alt="Post image" style="border-radius: 0.75rem; width: 100%;"></div>
                             <% } %>
-                            <div class="post-body"><p><%= post.content %></p></div>
+                            <div class="post-body"><p style="color: var(--text-main); font-size: 1.1rem;"><%= post.content %></p></div>
                             <div class="post-actions">
                                 <button class="like-button <%= post.likes.some(like => like.equals(currentUser._id)) ? 'liked' : '' %>">
                                     ❤️ <span class="likes-count"><%= post.likes.length %></span>
@@ -86,7 +89,7 @@
                             <div class="comments-section">
                                 <div class="comments-list" data-postid="<%= post._id %>">
                                     <% post.comments.forEach(comment => { %>
-                                        <p><a href="/profile/<%= comment.user.username %>" class="comment-username"><%= comment.user.username %></a>: <%= comment.content %></p>
+                                        <p style="margin-bottom: 0.5rem;"><a href="/profile/<%= comment.user.username %>" class="comment-username" style="color: var(--primary); text-decoration: none; font-weight: 500;">@<%= comment.user.username %></a>: <%= comment.content %></p>
                                     <% }) %>
                                 </div>
                                 <form class="comment-form" data-postid="<%= post._id %>">
@@ -97,7 +100,9 @@
                         </div>
                     <% }) %>
                 <% } else { %>
-                    <div class="card"><p>@<%= profileUser.username %> hasn't posted anything yet.</p></div>
+                    <div class="card" style="text-align: center; padding: 3rem;">
+                        <p style="font-size: 1.25rem;">@<%= profileUser.username %> hasn't posted anything yet. 📭</p>
+                    </div>
                 <% } %>
             </div>
         </main>

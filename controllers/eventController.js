@@ -17,7 +17,8 @@ const createEvent = async (req, res) => {
             location: { lat, lng },
             date,
             organizer,
-            user: req.user.id 
+            user: req.user.id,
+            image: req.file ? req.file.path : undefined
         });
 
         const savedEvent = await newEvent.save();

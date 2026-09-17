@@ -11,21 +11,20 @@
 <body>
     <div class="container">
         <h1 class="brand-title">Check Your Email</h1>
-        <p>We sent a 6-digit One-Time Password (OTP) to <strong><%= email %></strong>. Please enter it below.</p>
+        <p>We sent a 6-digit One-Time Password (OTP) to <br><strong style="color: var(--primary);"><%= email %></strong>.</p>
 
         <div class="form-container">
-            <form action="/auth/verify-otp" method="POST">
-                
-                <% if (error) { %>
-                    <p class="error-message" style="color: red; text-align: center; margin-bottom: 15px;"><%= error %></p>
-                <% } %>
+            <% if (locals.error && error) { %>
+                <div class="error-message"><%= error %></div>
+            <% } %>
 
+            <form action="/auth/verify-otp" method="POST">
                 <div class="form-group">
-                    <label for="otp">OTP Code</label>
-                    <input type="text" id="otp" name="otp" required pattern="\d{6}" title="Please enter a 6-digit number">
+                    <label for="otp">Enter 6-Digit Code</label>
+                    <input type="text" id="otp" name="otp" required pattern="\d{6}" title="Please enter a 6-digit number" placeholder="000000" style="text-align: center; font-size: 1.5rem; letter-spacing: 0.5rem;">
                 </div>
                 
-                <button type="submit" class="button" style="width: 100%; margin-top: 10px;">Verify & Login</button>
+                <button type="submit" class="button">Verify & Login</button>
             </form>
             <div class="form-links">
                 <p>Didn't get an email? <a href="/auth/login">Go back to login</a></p>

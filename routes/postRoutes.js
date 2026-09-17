@@ -11,7 +11,7 @@ const { protect } = require('../middleware/authMiddleware');
 const upload = require('../config/cloudinary');
 
 // 2. Add the middleware to the post creation route
-router.route('/').post(protect, upload.single('postImage'), createPost).get(protect, getPosts);
+router.route('/').post(protect, upload.single('postImage'), createPost).get(getPosts);
 
 router.post('/:id/like', protect, likePost);
 router.post('/:id/comment', protect, addComment);

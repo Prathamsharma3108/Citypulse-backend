@@ -1,4 +1,4 @@
-const { getNews, getWeather, getYouTubeVideos, getAds } = require('../services/apiService');
+const { getNewsData, getWeatherData, getYoutubeVideos } = require('../services/apiService');
 const Post = require('../models/Post');
 
 // @route   GET /api/posts
@@ -46,15 +46,19 @@ exports.deletePost = async (req, res) => {
 exports.getCityUpdates = async (req, res) => {
   const { city } = req.params;
   try {
-    const news = await getNews(city);
-    const weather = await getWeather(city);
-    const videos = await getYouTubeVideos(city);
-    const ads = await getAds();
-    const posts = await Post.find({});
+    const [news, weather, videos, posts] = await Promise.all([
+      getNewsData('in'),
+      getWeatherData(city),
+      getYoutubeVideos(city),
+      Post.find({}).sort({ createdAt: -1 }).limit(10)
+    ]);
+
+    const ads = []; 
     const socialMediaPosts = []; 
 
     res.json({ news, weather, videos, ads, posts, socialMediaPosts });
   } catch (error) {
+    console.error('Update Controller Error:', error);
     res.status(500).json({ message: error.message });
   }
 };

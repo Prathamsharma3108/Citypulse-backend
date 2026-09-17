@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
 const { 
+    getFriends,
     sendFriendRequest, 
     acceptFriendRequest, 
     removeFriendOrRequest 
@@ -10,6 +11,7 @@ const {
 // All routes require the user to be logged in
 router.use(protect);
 
+router.get('/', getFriends);
 router.post('/send/:userId', sendFriendRequest);
 router.post('/accept/:userId', acceptFriendRequest);
 

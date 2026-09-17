@@ -25,35 +25,64 @@
         #select-chat-prompt { margin: auto; color: #888; }
     </style>
 </head>
-<body style="padding: 20px; background-color: #f0f2f5;">
-
-    <div class="chat-container">
+<body style="padding: 0; overflow: hidden; background-color: var(--bg-dark);">
+    <div class="dashboard-container">
         <aside class="sidebar">
-            <div class="sidebar-header">
-                <h2>Chats</h2>
-                <p>Select a friend to start chatting.</p>
+            <div class="sidebar-profile">
+                <img src="<%= currentUser.profilePicture %>" alt="Profile Picture">
+                <h2><%= currentUser.name %></h2>
+                <p>@<%= currentUser.username %></p>
             </div>
-            <div class="friends-list">
-                <% friends.forEach(friend => { %>
-                    <div class="friend-item" data-id="<%= friend._id %>" data-username="<%= friend.username %>">
-                        <img src="<%= friend.profilePicture %>" alt="<%= friend.username %>">
-                        <span><%= friend.username %></span>
-                    </div>
-                <% }) %>
-            </div>
+            <nav class="sidebar-nav">
+                <a href="/dashboard">Dashboard</a>
+                <a href="/profile">My Profile</a>
+                <a href="/chat" class="active">Chats</a>
+                <% if (currentUser && currentUser.isAdmin) { %>
+                    <a href="/admin" style="color: #60a5fa; font-weight: bold;">Admin Panel</a>
+                <% } %>
+                <a href="/logout" style="margin-top: auto; color: #ef4444;">Logout</a>
+            </nav>
         </aside>
 
-        <main class="chat-window">
-            <div class="chat-header" id="chat-header">
-                Select a Conversation
+        <main class="main-content" style="display: block; padding: 2rem;">
+            <div class="chat-container">
+                <aside class="chat-sidebar">
+                    <div class="sidebar-header" style="padding: 1.5rem; border-bottom: 1px solid var(--border);">
+                        <h2 style="font-size: 1.25rem; color: var(--text-main);">Chats</h2>
+                    </div>
+                    <div class="friends-list">
+                        <% if (friends && friends.length > 0) { %>
+                            <% friends.forEach(friend => { %>
+                                <div class="friend-item" data-id="<%= friend._id %>" data-username="<%= friend.username %>">
+                                    <img src="<%= friend.profilePicture %>" alt="<%= friend.username %>">
+                                    <div style="display: flex; flex-direction: column;">
+                                        <span style="color: var(--text-main); font-weight: 500;"><%= friend.username %></span>
+                                        <span style="color: var(--text-muted); font-size: 0.75rem;">Online</span>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        <% } else { %>
+                            <p style="padding: 1.5rem; color: var(--text-muted); font-size: 0.875rem;">No friends yet to chat with.</p>
+                        <% } %>
+                    </div>
+                </aside>
+
+                <main class="chat-window">
+                    <div class="chat-header" id="chat-header" style="padding: 1.5rem; border-bottom: 1px solid var(--border); font-weight: 600; color: var(--text-main);">
+                        Select a Conversation
+                    </div>
+                    <div class="chat-messages" id="chat-messages">
+                        <div id="select-chat-prompt" style="margin: auto; text-align: center; color: var(--text-muted);">
+                            <p style="font-size: 3rem; margin-bottom: 1rem;">💬</p>
+                            <p>Select a friend from the list to start chatting.</p>
+                        </div>
+                    </div>
+                    <form class="chat-input-form" id="message-form" style="display: none;">
+                        <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off" style="flex: 1; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 0.75rem; padding: 0.75rem 1rem; color: white;">
+                        <button type="submit" class="button" style="width: auto; padding: 0.75rem 1.5rem;">Send</button>
+                    </form>
+                </main>
             </div>
-            <div class="chat-messages" id="chat-messages">
-                <p id="select-chat-prompt">Select a friend from the list to see your conversation.</p>
-            </div>
-            <form class="chat-input-form" id="message-form" style="display: none;">
-                <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
-                <button type="submit" class="button">Send</button>
-            </form>
         </main>
     </div>
 

@@ -8,10 +8,11 @@ const {
     deleteEvent,
 } = require('../controllers/eventController');
 const { protect } = require('../middleware/authMiddleware');
+const upload = require('../config/cloudinary');
 
 router.route('/')
     .get(getEvents) // Get all events
-    .post(protect, createEvent); // Create a new event
+    .post(protect, upload.single('image'), createEvent); // Create a new event
 
 router.route('/:id')
     .get(getEventById) // Get a single event
